@@ -21,7 +21,7 @@ A modern contact management application built with Angular, featuring a clean UI
 
 1. Clone the repository
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/aaryan-verma/contact-management-system.git
    cd contact-management-angular
    ```
 
