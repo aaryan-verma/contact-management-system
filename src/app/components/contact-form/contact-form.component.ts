@@ -3,6 +3,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ContactController } from '../../controllers/contact.controller';
 import { Router, ActivatedRoute } from '@angular/router';
 import { map } from 'rxjs/operators';
+import { ViewportScroller } from '@angular/common';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-contact-form',
@@ -10,7 +12,7 @@ import { map } from 'rxjs/operators';
     <div class="min-h-screen bg-gray-100 p-4">
       <div class="max-w-md mx-auto bg-white rounded p-6">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">{{isEditMode ? 'Edit' : 'Add'}} Contact</h2>
+          <h2 class="text-lg md:text-xl font-semibold">{{isEditMode ? 'Edit' : 'Add'}} Contact</h2>
           <button (click)="navigateBack()" class="text-gray-500">
             <lucide-icon name="X" [size]="24"></lucide-icon>
           </button>
@@ -43,9 +45,15 @@ import { map } from 'rxjs/operators';
             </div>
           </div>
           <button type="submit" 
-                  [disabled]="!contactForm.valid"
-                  class="w-full bg-blue-500 text-white p-2 rounded disabled:opacity-50">
-            {{isEditMode ? 'Update' : 'Add'}} Contact
+                  [disabled]="!contactForm.valid || isLoading"
+                  class="w-full bg-blue-500 text-white p-2 rounded disabled:opacity-50 relative">
+            <span [class.invisible]="isLoading">
+              {{isEditMode ? 'Update' : 'Add'}} Contact
+            </span>
+            <div *ngIf="isLoading" 
+                 class="absolute inset-0 flex items-center justify-center">
+              <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            </div>
           </button>
         </form>
       </div>
@@ -58,12 +66,15 @@ export class ContactFormComponent implements OnInit {
   private contactId?: string;
   emailError: string | null = null;
   phoneError: string | null = null;
+  isLoading = false;
 
   constructor(
     private fb: FormBuilder,
     private contactController: ContactController,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private viewportScroller: ViewportScroller,
+    private toastService: ToastService
   ) {
     this.contactForm = this.fb.group({
       name: ['', Validators.required],
@@ -73,6 +84,8 @@ export class ContactFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.viewportScroller.scrollToPosition([0, 0]);
+    
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.isEditMode = true;
@@ -89,26 +102,29 @@ export class ContactFormComponent implements OnInit {
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.contactForm.valid) {
-      (async () => {
-        try {
-          if (this.isEditMode && this.contactId) {
-            await this.contactController.updateContact(this.contactId, this.contactForm.value);
-          } else {
-            await this.contactController.createContact(this.contactForm.value);
-          }
-          this.navigateBack();
-        } catch (error: any) {
-          if (error.message.includes('Email already exists')) {
-            this.emailError = 'Email already exists';
-            this.phoneError = null;
-          } else if (error.message.includes('Phone number already exists')) {
-            this.phoneError = 'Phone number already exists';
-            this.emailError = null;
-          }
+      this.isLoading = true;
+      try {
+        if (this.isEditMode && this.contactId) {
+          await this.contactController.updateContact(this.contactId, this.contactForm.value);
+          this.toastService.show('Contact updated successfully', 'success');
+        } else {
+          await this.contactController.createContact(this.contactForm.value);
+          this.toastService.show('Contact created successfully', 'success');
         }
-      })();
+        this.navigateBack();
+      } catch (error: any) {
+        if (error.message.includes('Email already exists')) {
+          this.emailError = 'Email already exists';
+          this.toastService.show('Email already exists', 'error');
+        } else if (error.message.includes('Phone number already exists')) {
+          this.phoneError = 'Phone number already exists';
+          this.toastService.show('Phone number already exists', 'error');
+        }
+      } finally {
+        this.isLoading = false;
+      }
     }
   }
 

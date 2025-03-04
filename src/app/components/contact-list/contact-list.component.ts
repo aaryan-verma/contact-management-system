@@ -9,70 +9,98 @@ type SortDirection = 'asc' | 'desc';
 @Component({
   selector: 'app-contact-list',
   template: `
-    <div class="max-w-3xl mx-auto space-y-4">
-      <!-- Header -->
-      <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold">Contacts</h1>
-        <button (click)="navigateToAdd()" 
-                class="bg-blue-500 text-white px-4 py-2 rounded flex items-center gap-2">
-          <lucide-icon name="UserPlus" [size]="20"></lucide-icon>
-          Add Contact
-        </button>
-      </div>
-
-      <!-- Search and Sort -->
-      <div class="space-y-4">
-        <div class="relative">
-          <lucide-icon name="Search" 
-                      class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
-                      [size]="20">
-          </lucide-icon>
-          <input type="text" 
-                placeholder="Search contacts..." 
-                [(ngModel)]="searchTerm"
-                (ngModelChange)="searchTermChanged($event)" 
-                class="w-full p-2 pl-12 border rounded">
+    <!-- Hero Section -->
+    <div class="bg-blue-50 p-4 md:p-8 rounded-lg mb-8 text-center">
+      <h2 class="text-2xl md:text-3xl font-semibold text-blue-800 mb-2 md:mb-4">Manage Your Payment Contacts</h2>
+      <p class="text-sm md:text-base font-normal text-gray-600 mb-4 md:mb-6">Securely store and manage your UPI and payment contacts in one place</p>
+      <div class="flex flex-col md:flex-row justify-center gap-2 md:gap-4 mb-4">
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon name="Shield" class="text-green-500"></lucide-icon>
+          <span>Secure Storage</span>
         </div>
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon name="Zap" class="text-yellow-500"></lucide-icon>
+          <span>Fast Transactions</span>
+        </div>
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon name="Users" class="text-blue-500"></lucide-icon>
+          <span>Easy Management</span>
+        </div>
+      </div>
+    </div>
 
-        <!-- Sort Controls -->
-        <div class="flex gap-4 items-center">
-          <span class="text-gray-600">Sort by:</span>
-          <button *ngFor="let field of sortFields" 
-                  (click)="updateSort(field)"
-                  class="px-3 py-1 rounded border"
-                  [class.bg-blue-50]="currentSort.field === field">
-            {{ field | titlecase }}
-            <span *ngIf="currentSort.field === field">
-              {{ currentSort.direction === 'asc' ? '↑' : '↓' }}
-            </span>
+    <div class="max-w-3xl mx-auto">
+      <!-- Sticky Controls Section -->
+      <div class="sticky top-[72px] bg-gray-100 pt-4 pb-2 z-40 space-y-4">
+        <!-- Header -->
+        <div class="flex justify-between items-center">
+          <h1 class="text-xl md:text-2xl font-semibold">Contacts</h1>
+          <button (click)="navigateToAdd()" 
+                  class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 rounded-lg flex items-center gap-2 transition-colors shadow-sm hover:shadow">
+            <lucide-icon name="UserPlus" [size]="20"></lucide-icon>
+            Add Contact
           </button>
         </div>
+
+        <!-- Search and Sort -->
+        <div class="space-y-4 bg-white p-4 rounded-lg shadow-sm">
+          <div class="relative">
+            <lucide-icon name="Search" 
+                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                        [size]="20">
+            </lucide-icon>
+            <input type="text" 
+                  placeholder="Search contacts..." 
+                  [(ngModel)]="searchTerm"
+                  (ngModelChange)="searchTermChanged($event)" 
+                  class="w-full p-3 pl-12 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+          </div>
+
+          <!-- Sort Controls -->
+          <div class="flex flex-wrap gap-3 items-center">
+            <span class="text-gray-600 font-medium">Sort by:</span>
+            <div class="flex flex-wrap gap-2">
+              <button *ngFor="let field of sortFields" 
+                      (click)="updateSort(field)"
+                      class="px-4 py-2 rounded-full border transition-all"
+                      [class.bg-blue-500]="currentSort.field === field"
+                      [class.text-white]="currentSort.field === field"
+                      [class.border-blue-500]="currentSort.field === field"
+                      [class.hover:bg-blue-50]="currentSort.field !== field">
+                {{ field | titlecase }}
+                <span *ngIf="currentSort.field === field" class="ml-1">
+                  {{ currentSort.direction === 'asc' ? '↑' : '↓' }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Contact List with Pagination -->
-      <div class="space-y-4">
+      <!-- Contact List Section -->
+      <div class="mt-4 space-y-4">
         <app-contact-card 
           *ngFor="let contact of paginatedContacts$ | async" 
           [contact]="contact">
         </app-contact-card>
 
         <!-- Pagination Controls -->
-        <div class="flex justify-between items-center mt-4" 
+        <div class="flex justify-between items-center mt-6 bg-white p-4 rounded-lg shadow-sm" 
              *ngIf="(totalPages$ | async) as totalPages">
           <div class="text-gray-600">
-            Showing {{ currentPage * pageSize + 1 }} - 
-            {{ Math.min((currentPage + 1) * pageSize, (totalContacts$ | async) || 0) }}
-            of {{ totalContacts$ | async }} contacts
+            Showing <span class="font-medium">{{ currentPage * pageSize + 1 }}</span> - 
+            <span class="font-medium">{{ Math.min((currentPage + 1) * pageSize, (totalContacts$ | async) || 0) }}</span>
+            of <span class="font-medium">{{ totalContacts$ | async }}</span> contacts
           </div>
           <div class="flex gap-2">
             <button (click)="previousPage()"
                     [disabled]="currentPage === 0"
-                    class="px-3 py-1 border rounded disabled:opacity-50">
+                    class="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors">
               Previous
             </button>
             <button (click)="nextPage()"
                     [disabled]="currentPage >= totalPages - 1"
-                    class="px-3 py-1 border rounded disabled:opacity-50">
+                    class="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors">
               Next
             </button>
           </div>
